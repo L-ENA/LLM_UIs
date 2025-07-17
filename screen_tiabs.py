@@ -3,7 +3,9 @@ import streamlit as st
 import pandas as pd
 import chardet
 import pyperclip
+import openai
 from openai import OpenAI
+from datetime import date
 
 def detect_encoding(file):
     raw_data = file.read()
@@ -15,9 +17,10 @@ def screen_me():
     with st.sidebar:
         if st.button("Reset Results"):
             st.session_state.results_df=pd.DataFrame()
+        st.session_state.minlength=st.number_input("Minimum length of context, shorter inputs are classified as includes automatically", value=200)
 
     st.subheader("LLM Screening")
-    st.write("For screening and data extraction, it is important to use random independent subsets of data for developing and validating prompts. Do this with Excel, Python/R, other spreadsheet software, or use [RefRandomiser](https://refrandomiser.streamlit.app/) to quicly and easily create as many subsets as needed.")
+    st.write("For screening and data extraction, it is important to use random independent subsets of data for developing and validating prompts. Do this with Excel, Python/R, other spreadsheet software, or use [RefRandomiser](https://refrandomiser.streamlit.app/) to quickly and easily create as many subsets as needed.")
 
     st.markdown("### Upload CSV")
 
@@ -42,8 +45,9 @@ def screen_me():
         my_selections=st.multiselect("Select text data", list(df.columns))
         st.markdown("#### Example context (first row of spreadsheet)")
         st.write("Check if selected order and fields make sense as LLM context. The LLM will automatially assign 'included' status if the given context is shorter than 200 characters")
-        for s in my_selections:
-            st.markdown("**{}**: {}".format(s, df[s][0]))
+        with st.expander("Show example from spreadsheet"):
+            for s in my_selections:
+                st.markdown("**{}**: {}".format(s, df[s][0]))
         #st.write(my_selections)
 
         if len(my_selections)>0:
@@ -68,7 +72,7 @@ def screen_me():
                     - optionally, describe exclusion criteria
                     - use text from example below to make sure that screening decisions get parsed correctly
                 """)
-            st.write("Below is an example prompt. You can copy and edit it, however, retaining the last sentences (after 'Answer YES if the article is relevant or unclear [..]' is recommended.")
+            st.write("Below is an example prompt. You can copy and edit it, however, retaining the last sentences (after 'Answer YES if the article is relevant or unclear [..]' is recommended. You do not need to paste any actual context, this will be added automatically from your spreadsheet.")
             st.divider()
             c1full, c2full = st.columns([6, 1])
             with c1full:
@@ -113,9 +117,10 @@ def screen_me():
                                 {"role": "user", "content": '%s' % prompt}
                             ]
                         )
+                        st.session_state.my_model= completion.model
                         openai_response = completion.choices[0].message.content
                         if openai_response.startswith("YES") or openai_response.startswith(
-                                "**YES**") or "YES" in openai_response[:15] or len(ti_abs_key) < 200:
+                                "**YES**") or "YES" in openai_response[:15] or len(ti_abs_key) < st.session_state.minlength:
                             predictions.append(1)
                         else:
                             predictions.append(0)
@@ -132,23 +137,41 @@ def screen_me():
 
                 st.markdown("### Optional: Eval")
                 st.write("Select a column in your spreadsheet that contains gold-standard labelled data - where values are either 1 (include or relevant record) or 0 (exclude or irrelevant). This script will then calculate recall (sensitivity), precision (positive-predictive-value) and other important metrics. Note, specificity may not very meaningful in scenarios with big imbalances between in/ and exclude ratio.")
-                gold_column=st.selectbox("Select gold standard", list(st.session_state.results_df.columns))
+                opts=[""]
+                opts.extend(list(st.session_state.results_df.columns))
+                gold_column=st.selectbox("Select gold standard", opts, index=0)
 
-                gold=[int(g) for g in df[gold_column]]
+                if len(gold_column)>0:
+                    gold=[int(g) for g in df[gold_column]]
 
-                st.write("Sample data from gold column:")
-                st.write(gold[:5])
-                from sklearn.metrics import confusion_matrix,recall_score, precision_score, ConfusionMatrixDisplay
-                import matplotlib.pyplot as plt
-                st.write("Recall (sensitivity): {}".format(recall_score(gold, list(st.session_state.results_df["LLM prediction"]))))
-                st.write("Precision (positive-predictive-value): {}".format(
-                    precision_score(gold, list(st.session_state.results_df["LLM prediction"]))))
+                    st.write("Sample data from gold column:")
+                    st.write(gold[:5])
+                    from sklearn.metrics import confusion_matrix,recall_score, precision_score, ConfusionMatrixDisplay
+                    import matplotlib.pyplot as plt
+                    st.write("Recall (sensitivity): {}".format(recall_score(gold, list(st.session_state.results_df["LLM prediction"]))))
+                    st.write("Precision (positive-predictive-value): {}".format(
+                        precision_score(gold, list(st.session_state.results_df["LLM prediction"]))))
 
-                st.write("Confusion Matrix:")
-                disp=ConfusionMatrixDisplay(confusion_matrix=confusion_matrix(gold, list(st.session_state.results_df["LLM prediction"])))
-                disp.plot()
-                st.pyplot(plt)
+                    st.write("Confusion Matrix:")
+                    disp=ConfusionMatrixDisplay(confusion_matrix=confusion_matrix(gold, list(st.session_state.results_df["LLM prediction"])))
+                    disp.plot()
+                    st.pyplot(plt)
 
+                    st.markdown("### Reporting the use of AI")
+                    st.write("The following paragraph shows a suggested description of the methodology followed by this app. Users need to fill in some gaps.")
+
+                    prompt_structure=[
+                                {"role": "user", "content": '%s' % st.session_state.llm_prompt}
+                            ]
+                    openai.api_key=st.session_state.key
+                    mytext="OpenAI's '{}' model was used on {}. For each record in the dataset, this request/prompt was sent to the OpenAI API to retrieve classifications: '{}'. For each prompt, context from the following fields was provided: {}. Prompts were developed on [XXXX] randomly selected records and validated on an independent subset of [XXXX] records. Recall, precision, as well as the numbers of true positives, true negatives, false positives and false negatives on the independent test set are reported. All contexts shorter than {} characters were automatically assigned the positive class. Code for the interaction with the API and calculation of results is available here: https://github.com/L-ENA/LLM_UIs".format(st.session_state.my_model, date.today().strftime("%Y-%m-%d"),prompt_structure, "+".join(my_selections), st.session_state.minlength)
+
+                    c1, c2 = st.columns([6, 1])
+                    with c1:
+                        st.write(mytext)
+                    with c2:
+                        if st.button("Copy report draft"):
+                            pyperclip.copy(prompt_example)
 
 
 
