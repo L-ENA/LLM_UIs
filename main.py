@@ -4,7 +4,7 @@ from screen_tiabs import screen_me
 from evaluate import evaluate_me
 
 def get_data():
-    st.session_state.llm = st.selectbox("LLM", ["gpt-5","gpt-5-mini","gpt-4o-mini", "gpt-4.1",
+    st.session_state.llm = st.selectbox("LLM", ["gpt-5-mini","gpt-5","gpt-4o-mini", "gpt-4.1",
                                                 "Other OpenAI model or specific snapshot"])
 
     if st.session_state.llm == "Other OpenAI model or specific snapshot":
@@ -39,5 +39,6 @@ if st.session_state.task:
         evaluate_me()
     else:
         st.write("Task not yet implemented")
+
 
 
