@@ -75,12 +75,12 @@ def screen_me():
             st.write("Below is an example prompt. You can copy and edit it, however, retaining the last sentences (after 'Answer YES if the article is relevant or unclear [..]' is recommended. You do not need to paste any actual context, this will be added automatically from your spreadsheet.")
             st.divider()
             c1full, c2full = st.columns([6, 1])
-            with c1full:
-                prompt_example = "You are a researcher screening published journal articles for inclusion in a literature analysis. The inclusion criteria are the following: A cohort or longitudinal study. The study should involve participants of any age. The research should focus on the effect or association of any dietary pattern on the incidence of depression or anxiety. Answer YES if the article is relevant or unclear. Answer NO if it is not. Then reproduce the exact context from the paper that contained the information on which basis you made the decision. Here is the text of the article: "
-                st.write(prompt_example)
-            with c2full:
-                if st.button("Copy"):
-                    pyperclip.copy(prompt_example)
+            # with c1full:
+            prompt_example = "You are a researcher screening published journal articles for inclusion in a literature analysis. The inclusion criteria are the following: A cohort or longitudinal study. The study should involve participants of any age. The research should focus on the effect or association of any dietary pattern on the incidence of depression or anxiety. Answer YES if the article is relevant or unclear. Answer NO if it is not. Then reproduce the exact context from the paper that contained the information on which basis you made the decision. Here is the text of the article: "
+            st.write(prompt_example)
+            # with c2full:
+                # if st.button("Copy"):
+                #     pyperclip.copy(prompt_example)
 
             st.markdown("### Enter your prompt:")
             st.text_area("Full prompt", key="llm_prompt")
@@ -158,7 +158,7 @@ def screen_me():
                     st.pyplot(plt)
 
                     st.markdown("### Reporting the use of AI")
-                    st.write("The following paragraph shows a suggested description of the methodology followed by this app. Users need to fill in some gaps.")
+                    st.write("The following paragraph shows a suggested description of the methodology followed by this app. You can copy and use it but you may need to fill in some gaps.")
 
                     prompt_structure=[
                                 {"role": "user", "content": '%s' % st.session_state.llm_prompt}
@@ -166,12 +166,12 @@ def screen_me():
                     openai.api_key=st.session_state.key
                     mytext="OpenAI's '{}' model was used on {}. For each record in the dataset, this request/prompt was sent to the OpenAI API to retrieve classifications: '{}'. For each prompt, context from the following fields was provided: {}. Prompts were developed on [XXXX] randomly selected records and validated on an independent subset of [XXXX] records. Recall, precision, as well as the numbers of true positives, true negatives, false positives and false negatives on the independent test set are reported. All contexts shorter than {} characters were automatically assigned the positive class. Code for the interaction with the API and calculation of results is available here: https://github.com/L-ENA/LLM_UIs".format(st.session_state.my_model, date.today().strftime("%Y-%m-%d"),prompt_structure, "+".join(my_selections), st.session_state.minlength)
 
-                    c1, c2 = st.columns([6, 1])
-                    with c1:
-                        st.write(mytext)
-                    with c2:
-                        if st.button("Copy report draft"):
-                            pyperclip.copy(prompt_example)
+                    # c1, c2 = st.columns([6, 1])
+                    # with c1:
+                    st.write(mytext)
+                    # with c2:
+                    #     if st.button("Copy report draft"):
+                    #         pyperclip.copy(prompt_example)
 
 
 
