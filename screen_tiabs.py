@@ -37,8 +37,9 @@ def screen_me():
 
         df = pd.read_csv(uploaded_file, encoding=encoding_var)
         st.success("CSV loaded successfully!")
+        df.style.set_properties(**{'background-color': 'white'})
         st.markdown("### Data overview:")
-        st.dataframe(df.style.set_properties(**{'background-color': 'white'}).head())
+        st.dataframe(df.head())
 
         st.markdown("### Select text to classify")
         st.write("Please select columns that contain relevant text. For running the LLM on titles and abstracts, first select the title column and then select the abstract column. The order matters!")
@@ -172,6 +173,7 @@ def screen_me():
                     # with c2:
                     #     if st.button("Copy report draft"):
                     #         pyperclip.copy(prompt_example)
+
 
 
 
