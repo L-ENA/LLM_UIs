@@ -4,7 +4,7 @@ from screen_tiabs import screen_me
 from evaluate import evaluate_me
 
 def get_data():
-    st.session_state.llm = st.selectbox("LLM", ["gpt-4o-mini", "gpt-o3", "gpt-4o", "gpt-4.1",
+    st.session_state.llm = st.selectbox("LLM", ["gpt-5","gpt-5-mini","gpt-4o-mini", "gpt-4.1",
                                                 "Other OpenAI model or specific snapshot"])
 
     if st.session_state.llm == "Other OpenAI model or specific snapshot":
@@ -24,7 +24,9 @@ init_session()
 
 st.header("Automating Evidence Synthesis and Related Tasks with LLMs")
 st.write("A UI to Lena's collection of scripts to interact with OpenAI LLMs - users are responsible for their own prompt development and evaluation and need to ensure that they follow ethical and scientific principles. Minimum best practices of reporting include: reporting the use of LLMs, LLM name, LLM version, LLM prompts, description of prompt development process, and if applicable: full confusion matrix (True Positives, True negatives, False positives, False negatives) plus precision, recall, for easy overview of performances.")
-
+st.divider()
+st.write("Note: Streamlit apps may sometimes not display tables correctly in outdated installations of Firefox. If the content of your tables is black, update Firefox to the latest version or use Chrome/Edge browser.")
+st.divider()
 st.session_state.task = st.selectbox("Automation Task", ["Screening", "Evaluation", "Data Extraction", "Fulltext interrogation", "PhD Chapter", "Synthetic Abstract"], placeholder="Select Task")
 
 
